@@ -1,0 +1,60 @@
+import unittest
+from textnode import TextNode, TextType, text_node_to_html_node
+from htmlnode import LeafNode
+
+class TestTextNodeToHtmlNode(unittest.TestCase):
+    def test_text_conversion(self):
+        # Create a text node
+        text_node = TextNode("example text", TextType.TEXT)
+        
+        # Convert it to HTML node
+        html_node = text_node_to_html_node(text_node)
+        
+        # Create the expected result
+        expected = LeafNode(None, "example text")
+        
+        # Compare them
+        self.assertEqual(html_node, expected)
+
+    def test_bold_conversion(self):
+        text_node2 = TextNode("example text", TextType.BOLD)
+        html_node2 = text_node_to_html_node(text_node2)
+        expected = LeafNode("b", "example text")
+        self.assertEqual(html_node2, expected)
+
+    def test_italic_conversion(self):
+        text_node3 = TextNode("example text", TextType.ITALIC)
+        html_node3 = text_node_to_html_node(text_node3)
+        expected = LeafNode("i", "example text")
+        self.assertEqual(html_node3, expected)
+
+    def test_code_conversion(self):
+        text_node4 = TextNode("example text", TextType.CODE)
+        html_node4 = text_node_to_html_node(text_node4)
+        expected = LeafNode("code", "example text")
+        self.assertEqual(html_node4, expected)
+
+    def test_link_conversion(self):
+        text_node5 = TextNode("example text", TextType.LINK, "https://example.com")
+        html_node5 = text_node_to_html_node(text_node5)
+        props = {"href": "https://example.com"}
+        expected = LeafNode("a", "example text", props)
+        self.assertEqual(html_node5, expected)
+
+    def test_image_conversion(self):
+        text_node6 = TextNode("example text", TextType.IMAGE, "https://example.com")
+        html_node6 = text_node_to_html_node(text_node6)
+        props = {
+            "src": "https://example.com",
+            "alt": "example text"
+        }
+        expected = LeafNode("img", "", props)
+        self.assertEqual(html_node6, expected)
+
+    def test_invalid_text_type(self):
+        with self.assertRaises(Exception):
+            bad_node = TextNode("example test", "invalid type")
+            text_node_to_html_node(bad_node)
+
+if __name__ == "__main__":
+    unittest.main()

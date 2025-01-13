@@ -1,0 +1,58 @@
+import unittest
+from extractmarkdown import extract_markdown_images, extract_markdown_links
+
+class TestExtractMarkdownFunctions(unittest.TestCase):
+    def test_multi_images(self):
+        test = extract_markdown_images("This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)")
+        expected = [("rick roll", "https://i.imgur.com/aKaOqIh.gif"), ("obi wan", "https://i.imgur.com/fJRm4Vk.jpeg")]
+        self.assertEqual(test, expected)
+
+    def test_empty_string(self):
+        test = extract_markdown_images("")
+        expected = []
+        self.assertEqual(test, expected)
+    
+    def test_text_no_images(self):
+        test = extract_markdown_images("text with no image url")
+        expected = []
+        self.assertEqual(test, expected)
+
+    def test_links_func(self):
+        test = extract_markdown_links("This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)")
+        expected = [("to boot dev", "https://www.boot.dev"), ("to youtube", "https://www.youtube.com/@bootdotdev")]
+        self.assertEqual(test, expected)
+
+    def test_link_no_text(self):
+        test = extract_markdown_links("")
+        expected = []
+        self.assertEqual(test, expected)
+
+    def test_link_no_url(self):
+        test = extract_markdown_links("text with no image url")
+        expected = []
+        self.assertEqual(test, expected)
+
+    def test_mixed_content(self):
+        test_text = "Here is a ![cat pic](cat.jpg) and a [link to dogs](dogs.com) and another ![dog pic](dog.jpg)"
+            # Test image extraction
+        image_result = extract_markdown_images(test_text)
+        expected_images = [("cat pic", "cat.jpg"), ("dog pic", "dog.jpg")]
+        self.assertEqual(image_result, expected_images)
+            # Test link extraction
+        link_result = extract_markdown_links(test_text)
+        expected_links = [("link to dogs", "dogs.com")]
+        self.assertEqual(link_result, expected_links)
+
+    def test_malformed_image(self):
+        test_text = "This has a proper ![image](image.jpg) and a [forgotten exclamation mark](oops.jpg)"
+            # Test image extraction - should only get the proper image
+        image_result = extract_markdown_images(test_text)
+        expected_images = [("image", "image.jpg")]
+        self.assertEqual(image_result, expected_images)
+            # Test link extraction - should get the malformed image as a link
+        link_result = extract_markdown_links(test_text)
+        expected_links = [("forgotten exclamation mark", "oops.jpg")]
+        self.assertEqual(link_result, expected_links)
+
+if __name__ == "__main__":
+    unittest.main()

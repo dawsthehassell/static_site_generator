@@ -4,8 +4,7 @@ from extractmarkdown import extract_markdown_images ,extract_markdown_links
 from splitdelimiter import split_nodes_delimiter
 
 def text_to_textnodes(text):
-    # Normalize whitespace and newlines first
-    text = " ".join(text.split())  # This replaces multiple spaces/newlines with single spaces
+    text = " ".join(text.split()) 
     initial_nodes = [TextNode(text, TextType.TEXT)]
     split_image = split_nodes_image(initial_nodes)
     split_link = split_nodes_link(split_image)

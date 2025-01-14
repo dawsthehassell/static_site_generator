@@ -145,8 +145,6 @@ class TestTextToTextNodes(unittest.TestCase):
         text = """This is a **complex** test with *multiple* `code blocks` and ![images](img.png).
         It even has [links](https://boot.dev) and **bold text with *italic* inside**."""
         nodes = text_to_textnodes(text)
-        
-        # Check that we have the right types in order
         expected_types = [
             TextType.TEXT,   # "This is a "
             TextType.BOLD,   # "complex"

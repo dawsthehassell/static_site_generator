@@ -4,16 +4,9 @@ from htmlnode import LeafNode
 
 class TestTextNodeToHtmlNode(unittest.TestCase):
     def test_text_conversion(self):
-        # Create a text node
         text_node = TextNode("example text", TextType.TEXT)
-        
-        # Convert it to HTML node
         html_node = text_node_to_html_node(text_node)
-        
-        # Create the expected result
         expected = LeafNode(None, "example text")
-        
-        # Compare them
         self.assertEqual(html_node, expected)
 
     def test_bold_conversion(self):

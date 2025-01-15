@@ -5,8 +5,6 @@ def file_copier(source="./static", destination="./public"):
     source = os.path.abspath(source)
     destination = os.path.abspath(destination)
     file_list = os.listdir(source)
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"Resolved destination path: {destination}")
     if os.path.exists(destination):
         if os.path.commonpath([os.getcwd(), os.path.abspath(destination)]) == os.getcwd():
             shutil.rmtree(destination, ignore_errors=True)

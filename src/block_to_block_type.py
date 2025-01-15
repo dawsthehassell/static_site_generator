@@ -12,8 +12,8 @@ def block_to_block_type(block: str) -> str:
         else:
             break
     if 1 <= count <= 6 and len(block) > count and block[count] == ' ':
-            return 'heading'
-    # check for quote
+            return f"heading_{count}"
+    # check for blockquote
     lines = block.split('\n')
     is_quote = True
     for line in lines:
@@ -21,7 +21,7 @@ def block_to_block_type(block: str) -> str:
             is_quote = False
             break
     if is_quote:
-        return "quote"
+        return "blockquote"
     # check for unordered list
     is_unordered = True
     for line in lines:

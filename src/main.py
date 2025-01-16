@@ -1,5 +1,6 @@
 import shutil
 import os
+from generate_page import generate_page
 
 def file_copier(source="./static", destination="./public"):
     source = os.path.abspath(source)
@@ -29,6 +30,11 @@ def main():
     destination = "./public"
     file_copier(source, destination)
     print(f"Static files successfully copied from '{source}' to '{destination}'.")
+    generate_page(
+        from_path="content/index.md",
+        template_path="template.html",
+        dest_path="public/index.html"
+    )
 
 if __name__ == "__main__":
     main()

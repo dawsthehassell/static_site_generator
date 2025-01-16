@@ -1,3 +1,5 @@
+from text_type import TextType
+
 class HTMLNode():
     def __init__(self, tag=None, value=None, children=None, props=None):
         self.tag = tag
@@ -50,13 +52,6 @@ class ParentNode(HTMLNode):
         super().__init__(tag=tag, children=children, props=props, value=None)
 
     def to_html(self):
-        if not self.tag:
-            raise ValueError ("missing tag argument")
-        if not self.children:
-            raise ValueError("missing children argument")
-        html = f"<{self.tag}{self.props_to_html()}>"
-        for child in self.children:
-            result = child.to_html()
-            html += result
-        html += f"</{self.tag}>"
-        return html
+        if self.tag is None:
+            return "".join([child.to_html() for child in self.children])
+        return f"<{self.tag}{self.props_to_html()}>{''.join([child.to_html() for child in self.children])}</{self.tag}>"

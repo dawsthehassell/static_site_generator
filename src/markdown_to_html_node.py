@@ -1,73 +1,116 @@
 from markdown_to_blocks import markdown_to_blocks
 from block_to_block_type import block_to_block_type
-from htmlnode import HTMLNode
-from textnode import TextNode, TextType
+from htmlnode import HTMLNode, ParentNode, LeafNode
+from markdown_textnode import TextNode, TextType
+from markdown_textnode import text_node_to_html_node
+import re
+
+
+import re
 
 def text_to_children(text):
     children = []
-    while text:
-        if text.startswith("**"):  # Bold (**...**)
-            end = text.find("**", 2)  # Look for closing **
-            if end != -1:
-                strong_text = text[2:end]  # Extract text between **
-                children.append(HTMLNode("strong", [TextNode(strong_text, TextType.BOLD)]))
-                text = text[end + 2:]  # Remove processed text
-            else:
-                break  # Malformed bold markdown; stop processing
-        elif text.startswith("*"):  # Italics (*...*)
-            end = text.find("*", 1)  # Look for closing *
-            if end != -1:
-                em_text = text[1:end]  # Extract text between *
-                children.append(HTMLNode("em", [TextNode(em_text, TextType.ITALIC)]))
-                text = text[end + 1:]  # Remove processed text
-            else:
-                break  # Malformed italic markdown; stop processing
-        else:  # Plain text
-            # Find the next special marker (** or *)
-            next_bold = text.find("**") if "**" in text else float("inf")
-            next_italic = text.find("*") if "*" in text else float("inf")
-            next_special = min(next_bold, next_italic)
-
-            if next_special != float("inf"):  # Some special marker exists
-                plain_text = text[:next_special]  # Extract plain text before the marker
-                if plain_text.strip():  # Avoid empty strings (from markers side-by-side)
-                    children.append(TextNode(plain_text.strip(), TextType.TEXT))
-                text = text[next_special:]  # Remove processed plain text
-            else:  # No special markers; all remaining text is plain
-                if text.strip():
-                    children.append(TextNode(text.strip(), TextType.TEXT))
-                break  # Exit the loop, as there's nothing left to process
+    
+    pattern = r"(\*\*([^\*]+)\*\*)|(\*([^\*]+)\*)|(\[([^\]]+)\]\(([^\)]+)\))|([^\*\[\]]+)"
+    
+    # Store matches in a list
+    matches = list(re.finditer(pattern, text))
+    
+    # Debug prints
+    print("\nDEBUG Text input:", text)
+    print("DEBUG Matches:")
+    for match in matches:
+        print("Match groups:", [match.group(i) for i in range(9)])
+    
+    for match in matches:
+        if match.group(1):  # **bold**
+            bold_text = match.group(2)
+            bold_node = ParentNode("b", [LeafNode(None, bold_text)])
+            children.append(bold_node)
+        elif match.group(3):  # *italic*
+            italic_text = match.group(4)
+            italic_node = ParentNode("i", [LeafNode(None, italic_text)])
+            children.append(italic_node)
+        elif match.group(5):  # [text](url)
+            link_text = match.group(6)
+            link_url = match.group(7)
+            link_node = ParentNode("a", [LeafNode(None, link_text)], {"href": link_url})
+            children.append(link_node)
+        elif match.group(8):  # Plain text
+            plain_text = match.group(8)
+            if plain_text:
+                text_node = text_node_to_html_node(TextNode(plain_text, TextType.TEXT))
+                children.append(text_node)
+    
     return children
 
 def markdown_to_blocks(markdown):
+    markdown = str(markdown).strip('"\'')
     blocks = []
     current_block = []
+    in_list = False
     
     for line in markdown.split("\n"):
-        if line.strip() == "":
-            # Empty line = end of block
+        stripped_line = line.strip()
+        
+        # Empty line handling
+        if stripped_line == "":
             if current_block:
-                blocks.append(" ".join(current_block))
+                if in_list:
+                    blocks.append("\n".join(current_block))
+                else:
+                    blocks.append(" ".join(current_block))
                 current_block = []
-        # Check if it's a header
-        elif line.strip().startswith("#"):
-            # If we have a current block, add it
+                in_list = False
+            continue
+            
+        # List item detection
+        if stripped_line.startswith("* ") or stripped_line.startswith("- "):
+            if not in_list:
+                # If we were building a non-list block, finish it
+                if current_block:
+                    blocks.append(" ".join(current_block))
+                    current_block = []
+                in_list = True
+            current_block.append(line)
+            continue
+            
+        # If we're not in a list anymore but were before
+        if in_list and not (stripped_line.startswith("* ") or stripped_line.startswith("- ")):
             if current_block:
-                blocks.append(" ".join(current_block))
+                blocks.append("\n".join(current_block))
                 current_block = []
-            # Add header as its own block
-            blocks.append(line.strip())
-        else:
-            current_block.append(line.strip())
+            in_list = False
+            
+        # Header handling
+        if stripped_line.startswith("#"):
+            if current_block:
+                if in_list:
+                    blocks.append("\n".join(current_block))
+                else:
+                    blocks.append(" ".join(current_block))
+                current_block = []
+            blocks.append(stripped_line)
+            continue
+            
+        # Add line to current block
+        current_block.append(line)
     
-    # Don't forget last block
+    # Handle last block
     if current_block:
-        blocks.append(" ".join(current_block))
+        if in_list:
+            blocks.append("\n".join(current_block))
+        else:
+            blocks.append(" ".join(current_block))
     
     return blocks
 
 def markdown_to_html_node(markdown):
+    markdown = markdown.strip('"\'')  # Remove surrounding quotes
+    markdown = markdown.replace('\\n', '\n')
+    print("Input markdown:", repr(markdown))
     blocks = markdown_to_blocks(markdown)
+    print("After to_blocks:", repr(blocks))
     html_nodes = []
     for block in blocks:
         block_type = block_to_block_type(block)
@@ -77,23 +120,23 @@ def markdown_to_html_node(markdown):
             level = int(block_type.split("_")[1])
             cleaned_block = block[level + 1:].strip()
             children = text_to_children(cleaned_block)
-            html_node = HTMLNode(tag=f"h{level}", children=children)
+            html_node = ParentNode(tag=f"h{level}", children=children)
             html_nodes.append(html_node)
         
         # paragraph type
         elif block_type == "paragraph":
             text_children = text_to_children(block)
-            paragraph_node = HTMLNode("p", children=text_children)
+            paragraph_node = ParentNode("p", children=text_children)
             html_nodes.append(paragraph_node)
         
         # code type
         elif block_type == "code":
             code_content = block.strip().strip('```')
-            code_node = HTMLNode(
+            code_node = LeafNode(
                 tag="code",
-                children=[TextNode(code_content, "text")]
+                value=code_content
             )
-            pre_node = HTMLNode(
+            pre_node = ParentNode(
                 tag="pre",
                 children=[code_node]
             )
@@ -102,15 +145,20 @@ def markdown_to_html_node(markdown):
         # unordered list type
         elif block_type == "unordered_list":
             li_nodes = []
-            items = [item.strip() for item in block.split('*') if item.strip()]
-            for item in items:
-                children = text_to_children(item)
-                li_node = HTMLNode(
-                    tag="li",
-                    children=children
-                )
-                li_nodes.append(li_node)
-            ul_node = HTMLNode(
+            lines = block.split('\n')
+            for line in lines:
+                # Only remove the first * and one following space
+                if line.startswith('*'):
+                    line = line[1:]  # Remove the *
+                    line = line.lstrip(' ')  # Remove leading spaces after *
+                if line:  # Skip empty lines
+                    children = text_to_children(line)
+                    li_node = ParentNode(
+                        tag="li",
+                        children=children
+                    )
+                    li_nodes.append(li_node)
+            ul_node = ParentNode(
                 tag="ul",
                 children=li_nodes
             )
@@ -119,25 +167,29 @@ def markdown_to_html_node(markdown):
         # ordered list type
         elif block_type == "ordered_list":
             list_items = []
-            for line in block.split("\n"):
-                list_items.append(HTMLNode("li", text_to_children(line.strip())))
-            html_node = HTMLNode("ol", list_items)
+            # Use regex to split the block on each numbered item (e.g., "1.", "2.", etc.)
+            lines = re.split(r'\s*\d+\.\s+', block.strip())
+            for content in lines:
+                content = content.strip()
+                if content:  # Skip any empty results from the split
+                    list_items.append(ParentNode("li", text_to_children(content)))
+            html_node = ParentNode("ol", list_items)
             html_nodes.append(html_node)
-        
+                
         # blockquote type
         elif block_type == "blockquote":
             quote_content = "\n".join(
                 line.lstrip('>').strip() 
                 for line in block.split('\n')
             )
-            blockquote_node = HTMLNode(
+            blockquote_node = ParentNode(
                 tag="blockquote",
-                children=[TextNode(quote_content, "text")]
+                children=text_to_children(quote_content)
             )
             html_nodes.append(blockquote_node)
         
         else:
             raise ValueError(f"Unhandled block type: {block_type}")
     
-    html_node = HTMLNode(tag="div", children=html_nodes)
-    return html_node
+    parent = ParentNode(tag="div", children=html_nodes)
+    return parent

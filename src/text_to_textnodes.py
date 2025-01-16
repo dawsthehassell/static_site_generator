@@ -1,10 +1,11 @@
 from splitimglink import split_nodes_image, split_nodes_link
-from textnode import TextNode, TextType
+from markdown_textnode import TextNode, TextType
 from extractmarkdown import extract_markdown_images ,extract_markdown_links
 from splitdelimiter import split_nodes_delimiter
+import re
 
 def text_to_textnodes(text):
-    text = " ".join(text.split()) 
+    text = re.sub(r'\s+', ' ', text)
     initial_nodes = [TextNode(text, TextType.TEXT)]
     split_image = split_nodes_image(initial_nodes)
     split_link = split_nodes_link(split_image)

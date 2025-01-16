@@ -1,5 +1,5 @@
 import unittest
-from textnode import TextNode, TextType
+from markdown_textnode import TextNode, TextType
 from extractmarkdown import extract_markdown_images ,extract_markdown_links
 from splitimglink import split_nodes_image, split_nodes_link
 

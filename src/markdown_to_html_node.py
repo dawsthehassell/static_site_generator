@@ -10,17 +10,8 @@ import re
 
 def text_to_children(text):
     children = []
-    
-    pattern = r"(\*\*([^\*]+)\*\*)|(\*([^\*]+)\*)|(\[([^\]]+)\]\(([^\)]+)\))|([^\*\[\]]+)"
-    
-    # Store matches in a list
+    pattern = r"(\*\*([^\*]+)\*\*)|(\*([^\*]+)\*)|(\[([^\]]+)\]\(([^\)]+)\))|(`([^`]+)`)|([^\*\[\]`]+)"
     matches = list(re.finditer(pattern, text))
-    
-    # Debug prints
-    print("\nDEBUG Text input:", text)
-    print("DEBUG Matches:")
-    for match in matches:
-        print("Match groups:", [match.group(i) for i in range(9)])
     
     for match in matches:
         if match.group(1):  # **bold**
@@ -36,8 +27,12 @@ def text_to_children(text):
             link_url = match.group(7)
             link_node = ParentNode("a", [LeafNode(None, link_text)], {"href": link_url})
             children.append(link_node)
-        elif match.group(8):  # Plain text
-            plain_text = match.group(8)
+        elif match.group(8):  # `code`
+            code_text = match.group(9)
+            code_node = ParentNode("code", [LeafNode(None, code_text)])
+            children.append(code_node)
+        elif match.group(10):  # Plain text
+            plain_text = match.group(10)
             if plain_text:
                 text_node = text_node_to_html_node(TextNode(plain_text, TextType.TEXT))
                 children.append(text_node)
@@ -108,9 +103,7 @@ def markdown_to_blocks(markdown):
 def markdown_to_html_node(markdown):
     markdown = markdown.strip('"\'')  # Remove surrounding quotes
     markdown = markdown.replace('\\n', '\n')
-    print("Input markdown:", repr(markdown))
     blocks = markdown_to_blocks(markdown)
-    print("After to_blocks:", repr(blocks))
     html_nodes = []
     for block in blocks:
         block_type = block_to_block_type(block)

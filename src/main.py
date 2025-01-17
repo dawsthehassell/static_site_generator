@@ -1,6 +1,7 @@
 import shutil
 import os
 from generate_page import generate_page
+from generate_pages_recursive import generate_pages_recursive
 
 def file_copier(source="./static", destination="./public"):
     source = os.path.abspath(source)
@@ -26,15 +27,10 @@ def file_copier(source="./static", destination="./public"):
             shutil.copy(os.path.join(source, item), os.path.join(destination, item))
 
 def main():
-    source = "./static"
-    destination = "./public"
-    file_copier(source, destination)
-    print(f"Static files successfully copied from '{source}' to '{destination}'.")
-    generate_page(
-        from_path="content/index.md",
-        template_path="template.html",
-        dest_path="public/index.html"
-    )
+    template_path = "template.html"
+    content_dir = "content"
+    public_dir = "public"
+    generate_pages_recursive(content_dir, template_path, public_dir)
 
 if __name__ == "__main__":
     main()
